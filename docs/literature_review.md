@@ -30,7 +30,7 @@ mode as collision risk approaches.
 controller -- with a clear, computable trigger for switching between them. We do not use
 reachability theory or reinforcement learning; instead we replicate the concept with a simple
 "stop command" flag that switches our controller from its walking foot-placement rule to its
-Capture Point foot-placement rule (`phase1_math_model/capture_point.py`).
+Capture Point foot-placement rule (`Phase 1/capture_point.py`).
 
 **Relevance.** Frames "stopping" as a distinct control mode, which is exactly how our controller
 is structured.
@@ -73,8 +73,8 @@ a Linear Inverted Pendulum (LIP) model and an explicit Model Predictive Control 
 validated on a Mini-Cheetah-class robot.
 
 **What we borrow.** **This is our primary mathematical reference.** The LIP model
-(`phase1_math_model/lip_model.py`) and the Capture Point formula
-(`phase1_math_model/capture_point.py`) implemented in this project come directly from this line
+(`Phase 1/lip_model.py`) and the Capture Point formula
+(`Phase 1/capture_point.py`) implemented in this project come directly from this line
 of work.
 
 **Relevance.** Core mathematical foundation for the entire project.
@@ -174,7 +174,7 @@ penalty rewards.
 **What we borrow.** Conceptual support for using a *hard constraint* (the capture-point condition
 and the maximum leg reach) rather than a learned reward. Our controller enforces
 "can the foot physically reach the capture point" as a hard clamp
-(`phase1_math_model/capture_point.py::foot_placement`) instead of shaping a reward function.
+(`Phase 1/capture_point.py::foot_placement`) instead of shaping a reward function.
 
 **Relevance.** Supporting design justification.
 
@@ -199,7 +199,7 @@ Tc = sqrt(z0 / g)
 x_capture = x + x_dot * Tc
 ```
 
-is implemented directly in `phase1_math_model/capture_point.py`, and our speed-sweep experiment
+is implemented directly in `Phase 1/capture_point.py`, and our speed-sweep experiment
 reproduces the paper's N-step capturability idea empirically: the theoretical *1-step* capturable
 speed limit (`max_leg_reach / Tc`) is far lower than the *N-step* limit we observe once the
 controller is allowed several corrective steps (see `docs/final_report.md` / Phase 1 results).

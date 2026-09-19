@@ -1,0 +1,298 @@
+\documentclass{llncs}
+
+\usepackage{graphicx}
+\usepackage{grffile}
+\usepackage{amsmath}
+\usepackage{enumitem}
+
+\begin{document}
+
+\title{Motion Stopping and Stable Deceleration of Legged Robots}
+
+\author{Krishna Sikheriya (IIT2023139) \and Grish Gautam (IIT2023131) \and
+Nitya Bhavsar (IIT2023140) \and Priyam Jyoti Chakrabarty (IIT2023147) \and
+Tavish Chawla (IIT2023150) \and Biswajit Dash (MRM2025003)}
+
+\institute{Group 2, Foundations of Robotics (Mathematical Foundation of Robotics), BTech IT}
+
+\maketitle
+
+\begin{abstract}
+A legged robot that is walking or running carries forward momentum, and simply locking its legs
+will not bring it to a safe stop: the body keeps moving and the robot falls over. This report
+covers the first phase of our project, where we study the Capture Point method, which gives the
+exact spot on the ground where the next foot must land to cancel out this momentum and bring the
+robot to rest. We implement the method on a simplified point-mass model of a legged robot,
+compare it against a naive controller that simply locks the legs, and measure the fastest speed
+from which the robot can still stop safely. The report also summarizes the literature behind this
+approach and the work completed so far.
+\keywords{legged robots, capture point, inverted pendulum, balance control, stopping stability}
+\end{abstract}
+
+\section{Team Details}
+\label{sec:team}
+
+\textbf{Assigned Group Number:} 2
+
+\begin{itemize}[leftmargin=1.5cm]
+    \item Krishna Sikheriya (IIT2023139)
+    \item Grish Gautam (IIT2023131)
+    \item Nitya Bhavsar (IIT2023140)
+    \item Priyam Jyoti Chakrabarty (IIT2023147)
+    \item Tavish Chawla (IIT2023150)
+    \item Biswajit Dash (MRM2025003)
+\end{itemize}
+
+\section{Problem Statement}
+\label{sec:problem}
+
+When a legged robot is walking or running and needs to stop, it cannot simply freeze its legs.
+The body still has forward momentum, and if the legs lock in place, that momentum carries the
+body past its feet and the robot falls over, much like a person tripping while running. To stop
+safely, the robot has to take one or more quick steps and place its foot at the correct spot on
+the ground so that the momentum is cancelled out and the body comes to rest without falling.
+
+Our project looks at the math and control logic behind finding that correct foot placement. We
+are working with a simplified model of a legged robot, where the body is treated as a point mass
+balanced on a single leg. Using this model, we compute a value called the Capture Point, which
+tells us exactly where the next foot needs to land to bring the robot to a stop. We compare this
+against a simple, naive controller that just holds the leg in place once told to stop, to clearly
+show why that approach fails.
+
+We are also studying how well this stopping method holds up under different conditions, such as
+different starting speeds, pushes from the side, and different ground surfaces like slopes or
+slippery patches. Since our team does not have access to a physical robot or prior robotics
+background, all of this work is done through software simulation, first as a simplified math
+model and later as a 3D simulation. The end goal is to understand and demonstrate a working
+method for stable stopping that could, in principle, be used on a real legged robot.
+
+\section{Literature Review}
+\label{sec:litreview}
+
+Our approach draws on ten papers, two of them older but still central to almost everything
+published on this topic since.
+
+The core of the project comes from Koolen et al. (2012), who worked out the idea of the Capture
+Point and N-step capturability, a formal way of asking whether a legged robot can come to rest
+without falling within N steps. Chen et al. (2023) later carried this over to four-legged robots
+by pairing the Linear Inverted Pendulum model with a model predictive control scheme, and it is
+essentially this LIP model that Phase 1 is built around.
+
+A few of the more recent papers are less about the mechanics of stopping and more about deciding
+when to stop. He et al. (2024), which won the Best Paper award at RSS that year, trained a
+quadruped with two separate policies, one for fast running and one purely for recovery, and
+switched between them using a value function derived from reachability analysis. Sun et al.
+(2024) took a simpler route to a similar end, using convex optimization to continuously check
+whether a fall was becoming likely and triggering a dedicated stopping controller before it was
+too late. Both reinforced the same point for us: stopping works better as its own explicit mode
+with a clear switching condition than as something added onto the normal walking controller
+afterwards, which is roughly how our controller is structured, using a plain stop flag rather
+than anything learned.
+
+Two other papers shaped how we test and measure the controller rather than how we build it. van
+Marum et al. (2024) proposed a walk/stand command interface along with concrete benchmarking
+metrics, such as how far a robot drifts before it stops and how much energy it uses, and we
+borrowed these loosely as a way of judging our own results. Weng et al. (2024) described a
+standardized mechanical device for pushing a robot repeatably during testing; we cannot build a
+physical version of it, but the same idea carries over directly into a simulated, precisely
+timed push once we get to Phase 2.
+
+Subburaman et al. (2023) surveyed the wider field of humanoid falling and organized it into three
+stages: predicting a fall, controlling the stop or fall itself, and recovering afterward, and we
+have loosely followed that structure in how this project is organized. Thuruthel et al. (2021),
+whose title matches our own project almost exactly, argued that learning to stop reliably is a
+foundational skill rather than an afterthought, which is the framing we use to motivate the work.
+
+Kim et al. (2024) showed that legged robot controllers trained with explicit safety constraints
+tend to behave more reliably than ones relying only on shaped rewards, which lines up with our
+decision to enforce the Capture Point condition and the leg-reach limit as hard rules instead of
+something learned. Han et al. (2022) used a more detailed 3D Spring-Loaded Inverted Pendulum
+model, with an added energy-compensation term, to handle sideways impacts during running; this is
+a reasonable next step if time allows once the core controller is fully working.
+
+Of the ten, Koolen et al. (2012) and Chen et al. (2023) matter most directly, since the Linear
+Inverted Pendulum model and Capture Point formula used throughout this project come from them.
+The rest inform how we test, evaluate, and frame the work rather than the underlying math.
+
+\section{Progress and Implementation}
+\label{sec:progress}
+
+\subsection{Repository Setup}
+\label{sec:repo}
+
+We created a GitHub repository for the project and set up a Python environment using a virtual
+environment (\texttt{venv}) with \texttt{numpy}, \texttt{scipy}, \texttt{matplotlib}, and
+\texttt{pandas} for Phase 1. \texttt{pybullet} and \texttt{imageio} are listed for Phase 2 and
+will be installed later. A \texttt{requirements.txt} file is included so any team member can set
+up the same environment with one command. The repository is organized as follows:
+
+\begin{verbatim}
+Phase 1/
+    lip_model.py          - LIP dynamics
+    capture_point.py       - Capture point formula and controller
+    naive_controller.py    - Baseline "locked leg" controller
+    run_experiments.py     - Runs the speed sweep and generates all plots
+    plots/                 - Generated graphs
+    results.csv            - Generated results table
+docs/
+    literature_review.md   - Full write-up of the papers above
+README.md
+requirements.txt
+\end{verbatim}
+
+\subsection{Core Math Implemented}
+\label{sec:math}
+
+We modeled the robot as a point mass at a fixed height above the ground, balanced over one foot.
+The horizontal acceleration of this point mass follows:
+\begin{equation}
+\ddot{x} = \frac{g}{z_0}(x - p)
+\label{eq:lip}
+\end{equation}
+where $x$ is the position of the body, $p$ is the position of the foot, $z_0$ is the fixed body
+height, and $g$ is gravity. This equation is unstable on its own: if the body drifts even
+slightly away from being directly above the foot, it keeps drifting further away. This instability
+is exactly why the foot placement matters.
+
+To stop the robot safely, we compute the Capture Point:
+\begin{equation}
+T_c = \sqrt{z_0/g}, \qquad x_{capture} = x + \dot{x}\,T_c
+\label{eq:capture}
+\end{equation}
+This tells us where the next foot must land so that the body's velocity settles to zero instead of
+growing. We also extended this same formula so it can describe steady walking at a chosen speed,
+not just stopping, by using the same idea with a target speed instead of zero.
+
+\subsection{Code and Controllers}
+\label{sec:code}
+
+We implemented three main pieces of code inside \texttt{Phase 1/}:
+
+\begin{itemize}[leftmargin=1.5cm]
+    \item \textbf{lip\_model.py} -- simulates the pendulum equation above using simple Euler
+    integration (small time steps).
+    \item \textbf{capture\_point.py} -- computes the Capture Point at each step and decides where
+    the foot should go, limited by how far a leg can physically reach in one step.
+    \item \textbf{naive\_controller.py} -- a baseline controller that just keeps the foot fixed
+    once told to stop, so we can clearly show what happens without the Capture Point method.
+\end{itemize}
+
+Both controllers walk in exactly the same way before the stop command is given, so the only
+difference being tested is what happens at the moment of stopping.
+
+\subsection{Experiments and Results}
+\label{sec:results}
+
+Using \texttt{run\_experiments.py}, we tested both controllers across starting speeds from 0.2
+m/s to 4.0 m/s. The results were exactly what we expected:
+
+\begin{itemize}[leftmargin=1.5cm]
+    \item The naive controller falls at every single speed we tested, since holding the leg still
+    can never fix the instability once the body starts moving.
+    \item The Capture Point controller stops the robot cleanly at every speed up to about 3.0
+    m/s, by taking one or more corrective steps as needed.
+    \item If we only allow the robot a single corrective step, the highest speed it can stop from
+    is about 1.93 m/s (this matches the formula max leg reach divided by $T_c$). Allowing a few
+    extra steps pushes this limit up to around 3.0 m/s, after which the controller runs out of
+    steps and eventually falls too.
+\end{itemize}
+
+For each of these tests, the script generates position-vs-time graphs, velocity-vs-time graphs, a
+graph comparing the Capture Point to where the foot actually lands, and a summary graph showing
+the stopping outcome (stopped, ran out of steps, or fell) across all tested speeds; these are
+saved automatically under \texttt{Phase 1/plots/}. Figures~\ref{fig:stability}--\ref{fig:capturevfoot}
+show the main results.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.85\textwidth]{Phase 1/plots/stability_limit.png}
+    \caption{Stopping outcome vs. starting speed, for both controllers. The naive controller
+    (orange) falls at every speed tested. The Capture Point controller (blue) stops successfully
+    up to about 3.0 m/s, briefly fails to converge just past that point, and then falls as well,
+    giving a clear empirical stability limit.}
+    \label{fig:stability}
+\end{figure}
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.85\textwidth]{Phase 1/plots/trajectory_v1.8.png}
+    \caption{Position and velocity over time at a starting speed of 1.8 m/s, comparing both
+    controllers. Right after the stop command (dotted line), the naive controller's velocity
+    grows instead of decaying, the instability of Equation~\eqref{eq:lip} taking over, while the
+    Capture Point controller's velocity decays smoothly to zero.}
+    \label{fig:trajectory}
+\end{figure}
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.85\textwidth]{Phase 1/plots/capture_vs_foot_v2.8.png}
+    \caption{Capture point vs. actual foot placement at a starting speed of 2.8 m/s, for the
+    Capture Point controller. The foot placement catches up to the capture point over several
+    corrective steps rather than in one, illustrating the N-step capturability described by
+    Koolen et al. (2012) and explaining why the empirical stopping limit (about 3.0 m/s) exceeds
+    the theoretical single-step limit (about 1.93 m/s).}
+    \label{fig:capturevfoot}
+\end{figure}
+
+\subsection{Future Work}
+\label{sec:future}
+
+This covers the pre-midsem part of the project, which is the math model and the Capture Point
+controller. The next phase, planned for after the midsem, is to apply this same controller to a
+3D robot model in PyBullet, test it against pushes and different ground surfaces, and record a
+short demo video comparing the naive and Capture Point controllers.
+
+\clearpage
+\begin{thebibliography}{10}
+
+\bibitem{koolen2012}
+Koolen, T., de Boer, T., Rebula, J., Goswami, A., Pratt, J.: Capturability-based analysis and
+control of legged locomotion, Part 1: Theory and application to three simple gait models.
+International Journal of Robotics Research (2012). https://doi.org/10.1177/0278364912452673
+
+\bibitem{chen2023}
+Chen, H., Hong, Z., Yang, S., Wensing, P.M., Zhang, W.: Quadruped capturability and push
+recovery via a switched-systems characterization of dynamic balance. IEEE Transactions on
+Robotics (2023). https://arxiv.org/abs/2201.11928
+
+\bibitem{he2024}
+He, T., Zhang, C., Xiao, W., He, G., Liu, C., Shi, G.: Agile but safe: Learning collision-free
+high-speed legged locomotion. Robotics: Science and Systems (2024).
+https://arxiv.org/abs/2401.17583
+
+\bibitem{sun2024}
+Sun, H., Yang, J., Jia, Y., Zhang, C., Yu, X., Wang, C.: Fall prediction, control, and recovery
+of quadruped robots. ISA Transactions (2024). https://doi.org/10.1016/j.isatra.2024.05.039
+
+\bibitem{vanmarum2024}
+van Marum, B., Shrestha, A., Duan, H., Dugar, P., Dao, J., Fern, A.: Revisiting reward design
+and evaluation for robust humanoid standing and walking. IEEE/RSJ International Conference on
+Intelligent Robots and Systems (2024). https://arxiv.org/abs/2404.19173
+
+\bibitem{weng2024}
+Weng, B., Castillo, G.A., Kang, Y.S., Hereid, A.: Towards standardized disturbance rejection
+testing of legged robot locomotion with linear impactor. IEEE International Conference on
+Robotics and Automation (2024). https://arxiv.org/abs/2308.14636
+
+\bibitem{subburaman2023}
+Subburaman, R., Kanoulas, D., Tsagarakis, N., Lee, J.: A survey on control of humanoid fall
+over. Robotics and Autonomous Systems (2023). https://doi.org/10.1016/j.robot.2023.104443
+
+\bibitem{thuruthel2021}
+Thuruthel, T.G., Picardi, G., Iida, F., Laschi, C., Calisti, M.: Learning to stop: A unifying
+principle for legged locomotion in varying environments. Royal Society Open Science (2021).
+https://doi.org/10.1098/rsos.210223
+
+\bibitem{kim2024}
+Kim, Y., Oh, H., Lee, J., Choi, J., Ji, G., Jung, M., Youm, D., Hwangbo, J.: Not only rewards
+but also constraints: Applications on legged robot locomotion. IEEE Transactions on Robotics
+(2024). https://arxiv.org/abs/2308.12517
+
+\bibitem{han2022}
+Han, B., Yi, H., Xu, Z., Yang, X., Luo, X.: 3D-SLIP model based dynamic stability strategy for
+legged robots with impact disturbance rejection. Scientific Reports (2022).
+https://doi.org/10.1038/s41598-022-09937-9
+
+\end{thebibliography}
+
+\end{document}
