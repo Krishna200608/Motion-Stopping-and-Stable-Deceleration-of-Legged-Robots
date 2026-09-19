@@ -1,0 +1,9 @@
+# Phase 1 (math model + plots) needs only these three:
+numpy
+scipy
+matplotlib
+pandas
+
+# Phase 2 (PyBullet 3D simulation) will additionally need:
+pybullet
+imageio
