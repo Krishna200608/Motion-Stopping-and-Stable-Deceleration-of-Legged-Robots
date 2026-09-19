@@ -12,16 +12,9 @@ the momentum carries the body forward and it falls. This project implements and 
 **Capture Point** method: computing exactly where the next foot must land to bring the robot to a
 stable stop, instead of falling.
 
-The project has two phases:
-
-- **Phase 1 (this repo, done pre-midsem):** a pure-math simulation of the robot as a
-  Linear Inverted Pendulum (LIP), with a working Capture Point stopping controller, compared
-  against a naive "just lock the legs" baseline. Output: graphs, no 3D rendering.
-- **Phase 2 (post-midsem):** the same Capture Point logic applied to a 3D robot model in
-  PyBullet, with push and terrain (slope/friction) disturbance testing, and a recorded demo video.
 
 See [`docs/literature_review.md`](docs/literature_review.md) for the ten papers this project is
-based on, and `MANUAL.md` for exact step-by-step run instructions.
+based on.
 
 ## Repository structure
 
