@@ -57,10 +57,3 @@ report).
 cd turning_analysis
 python run_turning_analysis.py
 ```
-
-## Not yet done
-
-The review report's second planning-level deliverable -- the **decision
-deadline** (how far from an obstacle the robot must commit to a turn
-direction) -- is not implemented here yet; it builds on this envelope
-and is a natural next step.
