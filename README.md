@@ -16,6 +16,14 @@ stable stop, instead of falling.
 See [`docs/literature_review.md`](docs/literature_review.md) for the ten papers this project is
 based on.
 
+## Revised direction (post-review)
+
+Following `G2_Progress_Review.docx`, the project's scope is shifting from pure stopping to
+**obstacle-triggered deceleration and turning** for a bipedal robot (full stop is now out of
+scope; see that document for the full reasoning and the three new work packages). The Phase 1
+pendulum/Capture Point math carries over directly to the "planning-level analysis" work package --
+see [`turning_analysis/`](turning_analysis/) for the turning-envelope extension of that work.
+
 ## Repository structure
 
 ```
