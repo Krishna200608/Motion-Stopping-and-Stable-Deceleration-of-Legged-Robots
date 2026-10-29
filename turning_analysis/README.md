@@ -51,9 +51,56 @@ turning policy exists (Work Packages 1-2), its measured turning radius
 at each speed can be checked against this envelope (RQ1 in the review
 report).
 
+## Decision deadline and U-turn corridor
+
+- `decision_deadline.py` -- builds on the turning envelope plus Phase 1's
+  single-step limit. Full derivation is in the module docstring.
+  - **Swerve distance**: with obstacle width `w` and clearance `c`, the
+    robot must shift sideways by `L = w/2 + c`. On the tightest arc
+    `r = r_min(v)` this takes `sqrt(L(2r - L))` of forward distance
+    (`r` if `L >= r`).
+  - **Decision deadline**: the last distance at which the robot must
+    commit. The robot may brake first (max deceleration
+    `a_max = min(mu*g, (max_leg_reach/Tc)/step_duration)`) to a speed
+    `v' >= min_turn_speed` (0.5 m/s, since stopping is out of scope),
+    then swerve: `min over v' of (v^2 - v'^2)/(2 a_max) + swerve(v')`.
+  - **U-turn corridor**: `W = 2 r_min(v) + body_width`, plus the inverse
+    (fastest U-turn speed for a given corridor) and the braking distance
+    needed to get down to it.
+- `run_deadline_analysis.py` -- generates `plots/decision_deadline.png`,
+  `plots/uturn_corridor.png`, `plots/feasibility_map.png`, and
+  `decision_deadline.csv`, `uturn_corridor.csv`, `uturn_entry_braking.csv`,
+  `feasibility_table.csv` (every (speed, distance, width, grip)
+  combination, flagged feasible or not).
+
+### Findings (z0=0.8, step 0.4 s, reach 0.55 m, clearance 0.3 m)
+
+- **If the robot keeps its speed**, the deadline grows with speed and
+  obstacle width. On a typical floor at 4 m/s: 1.8 m (0.5 m wide) up to
+  3.2 m (4 m wide). At 2 m/s it is only 0.8 m.
+- **Braking first beats turning at speed.** The turn radius and the
+  braking distance both scale with `v^2`, but braking is cheaper, so the
+  brake-then-turn deadline is much shorter (1.7 m at 4 m/s on a typical
+  floor) and almost independent of obstacle width, because at 0.5 m/s the
+  turn radius is under 0.1 m. Real robots will not turn that sharply at
+  low speed; this is a point-mass limit, and the learned policy
+  (RQ2) is where it gets tested.
+- **Grip matters only on a low-grip floor.** For mu >= 0.6 the balance
+  limit binds both turning and braking, so mu = 0.6 and 0.9 give
+  identical results.
+- **U-turn corridor**: about 2.2 m at 2 m/s and 7.1 m at 4 m/s
+  (typical or high grip); 11.4 m at 4 m/s on the low-grip floor.
+
+### Assumptions
+
+Point mass, flat ground, obstacle centred on the path, brake then turn
+(no braking during the turn), instant reaction (`reaction_time` is
+available), turn radius at any speed taken from the envelope.
+
 ## Quick start
 
 ```bash
 cd turning_analysis
 python run_turning_analysis.py
+python run_deadline_analysis.py
 ```
