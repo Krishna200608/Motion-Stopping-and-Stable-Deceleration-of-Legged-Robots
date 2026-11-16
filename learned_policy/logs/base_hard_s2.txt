@@ -1,1 +1,0 @@
-base_hard_s2: steps=400000 final_mean_episode_reward=12.77

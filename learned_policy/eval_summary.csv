@@ -1,5 +1,0 @@
-,success_rate,success_rate,success_rate_feasible,success_rate_feasible,collision_rate,collision_rate,timeout_rate,timeout_rate,speed_near_obstacle,speed_near_obstacle,mean_commit_distance,mean_commit_distance,late_commit_rate,late_commit_rate,dither_flips_symmetric,dither_flips_symmetric,dither_rate_symmetric,dither_rate_symmetric
-,mean,std,mean,std,mean,std,mean,std,mean,std,mean,std,mean,std,mean,std,mean,std
-condition,,,,,,,,,,,,,,,,,,
-base,1.0,0.0,1.0,0.0,0.0,0.0,0.0,0.0,1.8486043995798038,0.036086532153390014,3.8504348577104324,0.31933442076986546,0.0,0.0,0.0,0.0,0.0,0.0
-deadline_aware,0.9988888888888888,0.001924500897298733,0.9988888888888888,0.001924500897298733,0.0011111111111111111,0.0019245008972987529,0.0,0.0,2.034259793823352,0.0665580742023265,3.9721961010059954,0.02181989589050569,0.0011111111111111111,0.0019245008972987529,0.0,0.0,0.0,0.0
