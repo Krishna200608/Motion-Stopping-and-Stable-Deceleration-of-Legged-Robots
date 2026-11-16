@@ -51,9 +51,97 @@ turning policy exists (Work Packages 1-2), its measured turning radius
 at each speed can be checked against this envelope (RQ1 in the review
 report).
 
+## Decision deadline and U-turn corridor
+
+- `decision_deadline.py` -- builds on the turning envelope plus Phase 1's
+  single-step limit. Full derivation is in the module docstring.
+  - **Swerve distance**: with obstacle width `w` and clearance `c`, the
+    robot must shift sideways by `L = w/2 + c`. On the tightest arc
+    `r = r_min(v)` this takes `sqrt(L(2r - L))` of forward distance
+    (`r` if `L >= r`).
+  - **Decision deadline**: the last distance at which the robot must
+    commit. The robot may brake first (max deceleration
+    `a_max = min(mu*g, (max_leg_reach/Tc)/step_duration)`) to a speed
+    `v' >= min_turn_speed` (0.5 m/s, since stopping is out of scope),
+    then swerve: `min over v' of (v^2 - v'^2)/(2 a_max) + swerve(v')`.
+  - **U-turn corridor**: `W = 2 r_min(v) + body_width`, plus the inverse
+    (fastest U-turn speed for a given corridor) and the braking distance
+    needed to get down to it.
+- `run_deadline_analysis.py` -- generates `plots/decision_deadline.png`,
+  `plots/uturn_corridor.png`, `plots/feasibility_map.png`, and
+  `decision_deadline.csv`, `uturn_corridor.csv`, `uturn_entry_braking.csv`,
+  `feasibility_table.csv` (every (speed, distance, width, grip)
+  combination, flagged feasible or not).
+
+### Findings (z0=0.8, step 0.4 s, reach 0.55 m, clearance 0.3 m)
+
+> **Superseded in part:** these closed-form numbers are too optimistic above
+> ~2 m/s (the braking-distance and turn-radius figures, and the claim that
+> grip only matters on the low-grip floor). See "Validation against a
+> simulated LIP" below and `lip_step_model.py` for the corrected limits.
+
+- **If the robot keeps its speed**, the deadline grows with speed and
+  obstacle width. On a typical floor at 4 m/s: 1.8 m (0.5 m wide) up to
+  3.2 m (4 m wide). At 2 m/s it is only 0.8 m.
+- **Braking first beats turning at speed.** The turn radius and the
+  braking distance both scale with `v^2`, but braking is cheaper, so the
+  brake-then-turn deadline is much shorter (1.7 m at 4 m/s on a typical
+  floor) and almost independent of obstacle width, because at 0.5 m/s the
+  turn radius is under 0.1 m. Real robots will not turn that sharply at
+  low speed; this is a point-mass limit, and the learned policy
+  (RQ2) is where it gets tested.
+- **Grip matters only on a low-grip floor.** For mu >= 0.6 the balance
+  limit binds both turning and braking, so mu = 0.6 and 0.9 give
+  identical results.
+- **U-turn corridor**: about 2.2 m at 2 m/s and 7.1 m at 4 m/s
+  (typical or high grip); 11.4 m at 4 m/s on the low-grip floor.
+
+### Assumptions
+
+Point mass, flat ground, obstacle centred on the path, brake then turn
+(no braking during the turn), instant reaction (`reaction_time` is
+available), turn radius at any speed taken from the envelope.
+
+## Validation against a simulated LIP (`validate_model.py`)
+
+The closed-form bounds above were checked against a numerically integrated
+2D LIP (Phase 1's explicit-Euler dynamics, foot re-planted every 0.4 s by a
+deadbeat rule and clamped to the foot limit). Run `python validate_model.py`;
+outputs are in `validation/` and `plots/validation.png`.
+
+- **Single-step limit.** Phase 1's `max_leg_reach / Tc = 1.926 m/s` was never
+  simulated. Holding one clamped foot and bisecting on speed gives
+  **1.926 m/s** -- the formula is exact.
+- **The Day-1 closed-form bounds are too optimistic above ~2 m/s.** They
+  treat a step as if the foot could keep pushing for the whole stance phase,
+  but the pendulum is unstable: after the CoM passes over the foot it falls
+  away again. Over 40 (speed, obstacle width, grip) cases the closed-form
+  brake-then-turn deadline is off by 0.55 m on average, always too short, and
+  the keep-speed deadline by 0.86 m.
+- **`lip_step_model.py` fixes this** by using the exact one-step LIP solution
+  (`u0 = (w_target - w cosh) Tc / sinh`, `|u0| <= min(reach, mu z0)`). Against
+  the simulation its mean error is 0.08 m (brake-then-turn) and 0.12 m
+  (keep speed); turning radius and braking distance match to ~1%.
+- **New findings from the exact model** (mu = 0.6, 0.4 s steps):
+  - friction binds through the friction cone `|x - foot| <= mu z0`, so even
+    mu = 0.6 is friction-limited (0.48 m < 0.55 m reach), not balance-limited
+    as the closed-form envelope suggested;
+  - there is a **maximum sustainable speed** (`u_max / (Tc tanh(T/2Tc))`:
+    3.19 m/s at mu >= 0.69, 2.78 m/s at mu = 0.6, 1.39 m/s at mu = 0.3) above
+    which even straight walking exceeds the foot limit;
+  - near that speed turning radius and braking distance blow up (mu = 0.6:
+    radius 2.2 m at 2.5 m/s, 8.1 m at 2.75 m/s), so the robot must start
+    braking much earlier than the closed-form deadline says.
+- **Known limitation.** Where the exact model says "infeasible" (speed above
+  the sustainable limit), the simulation can still swerve for a few
+  transient steps (20 of 60 keep-speed cases), so the model is conservative
+  there.
+
 ## Quick start
 
 ```bash
 cd turning_analysis
 python run_turning_analysis.py
+python run_deadline_analysis.py
+python validate_model.py      # ~1 minute
 ```

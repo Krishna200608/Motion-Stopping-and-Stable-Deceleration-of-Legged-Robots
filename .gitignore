@@ -4,3 +4,7 @@ __pycache__/
 venv/
 /extra
 /Review
+learned_policy/*.log
+/PPT
+plan.md
+final.md

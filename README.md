@@ -22,7 +22,10 @@ Following `G2_Progress_Review.docx`, the project's scope is shifting from pure s
 **obstacle-triggered deceleration and turning** for a bipedal robot (full stop is now out of
 scope; see that document for the full reasoning and the three new work packages). The Phase 1
 pendulum/Capture Point math carries over directly to the "planning-level analysis" work package --
-see [`turning_analysis/`](turning_analysis/) for the turning-envelope extension of that work.
+see [`turning_analysis/`](turning_analysis/) for the turning envelope, decision deadline,
+U-turn corridor and their validation against a simulated pendulum, and
+[`learned_policy/`](learned_policy/) for a small PPO obstacle-avoidance policy trained on that
+model (the G1 humanoid port is not done).
 
 ## Repository structure
 

@@ -7,3 +7,8 @@ pandas
 # Phase 2 (PyBullet 3D simulation) will additionally need:
 pybullet
 imageio
+
+# Learned turning policy (learned_policy/): PPO on a CPU-only gym environment
+gymnasium
+stable-baselines3
+torch
