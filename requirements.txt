@@ -1,0 +1,15 @@
+# Phase 1 (math model + plots) needs only these three:
+numpy
+scipy
+matplotlib
+pandas
+rich            # demo.py pretty output
+
+# Phase 2 (PyBullet 3D simulation) will additionally need:
+pybullet
+imageio
+
+# Learned turning policy (learned_policy/): PPO on a CPU-only gym environment
+gymnasium
+stable-baselines3
+torch
